@@ -3,8 +3,8 @@ package submit;
 // some useful things to import. add any additional imports you need.
 import joeq.Compiler.Quad.*;
 import flow.Flow;
-import java.util.ArrayList;
 
+import java.util.ArrayList;
 
 /**
  * Skeleton class for implementing the Flow.Solver interface.
@@ -35,87 +35,80 @@ public class MySolver implements Flow.Solver {
         // this needs to come first.
         analysis.preprocess(cfg);
 
-        ArrayList<Quad> exitQ = new ArrayList<Quad>();
-        Quad entryQ = null;
-        QuadIterator quadIter = new QuadIterator(cfg);
+        Quad entryQuad = null;
+        ArrayList<Quad> exitQuads = new ArrayList<Quad>();
 
-        // analyse the map
-        while (quadIter.hasNext()) {
-            quadIter.next();
-            boolean addQE = quadIter.successors1().contains(null);
-            boolean reIQ = quadIter.predecessors1().contains(null);
-            Quad cq = quadIter.getCurrentQuad();
-            if (reIQ)
-                entryQ = cq;
-            if (addQE)
-                exitQ.add(cq);
-        }
-
-        if (exitQ.isEmpty())
-            return;
-        if (entryQ == null)
-            return;
-
-        boolean isConverge = false;
-
-        if (!analysis.isForward()){
-            // backward analysis
-            for (;!isConverge; isConverge = true){
-                quadIter = new QuadIterator(cfg, false);
-                while (quadIter.hasPrevious()){
-                    Flow.DataflowObject opt = analysis.newTempVar();
-                    opt.setToTop();
-                    Quad cq = quadIter.previous();
-                    for(Quad sq: quadIter.successors1()){
-                        if (sq == null){
-                            opt.meetWith(analysis.getExit());
-                            continue;
-                        }
-                        opt.meetWith(analysis.getIn(sq));
-                    }
-
-                    analysis.setOut(cq, opt);
-                    Flow.DataflowObject ipt = analysis.getIn(cq);
-                    analysis.processQuad(cq);
-
-                    //check converage
-                    if (analysis.getIn(cq).equals(ipt)){
-                        continue;
-                    }
-                    isConverge = false;     
-                }  
+        QuadIterator qit = new QuadIterator(cfg);
+        while (qit.hasNext()) {
+            qit.next();
+            if (qit.successors1().contains(null)) {
+                exitQuads.add(qit.getCurrentQuad());
             }
-            analysis.setEntry(analysis.getIn(entryQ));
+            if (qit.predecessors1().contains(null)) {
+                entryQuad = qit.getCurrentQuad();
+            }
         }
-        if (analysis.isForward()){
-            // forward analysis
-            for (;!isConverge; isConverge = true){
-                quadIter = new QuadIterator(cfg, true);
-                while (quadIter.hasNext()){
-                    Flow.DataflowObject ipt = analysis.newTempVar();
-                    Quad cq = quadIter.next();
-                    for (Quad pq: quadIter.predecessors1()){
-                        if (pq == null){
-                            ipt.meetWith(analysis.getEntry());
-                            continue;
+
+        if (entryQuad == null || exitQuads.isEmpty()) {
+            return;
+        }
+
+        if (analysis.isForward()) {
+            boolean converged = false;
+            while (!converged) {
+                converged = true;
+                qit = new QuadIterator(cfg, true);
+                while (qit.hasNext()) {
+                    Quad curQuad = qit.next();
+                    Flow.DataflowObject newIn = analysis.newTempVar();
+                    for (Quad preQuad: qit.predecessors1()) {
+                        if (preQuad == null) {
+                            newIn.meetWith(analysis.getEntry());
+                        } else {
+                            newIn.meetWith(analysis.getOut(preQuad));
                         }
-                        ipt.meetWith(analysis.getOut(pq));
                     }
-                    analysis.setIn(cq, ipt);
-                    Flow.DataflowObject opt = analysis.getOut(cq);
-                    analysis.processQuad(cq);
-                    if (analysis.getOut(cq).equals(opt)){
-                        continue;
+                    analysis.setIn(curQuad, newIn);
+                    Flow.DataflowObject oldOut = analysis.getOut(curQuad);
+                    analysis.processQuad(curQuad);
+                    if (!analysis.getOut(curQuad).equals(oldOut)) {
+                        converged = false;
                     }
-                    isConverge = false;
                 }
             }
-            Flow.DataflowObject exitVal = analysis.newTempVar();
-            exitVal.setToTop();
-            for(Quad q: exitQ)
-                exitVal.meetWith(analysis.getOut(q));
-            analysis.setExit(exitVal);
+            Flow.DataflowObject exitValue = analysis.newTempVar();
+            exitValue.setToTop();
+            for (Quad q: exitQuads) {
+                exitValue.meetWith(analysis.getOut(q));
+            }
+            analysis.setExit(exitValue);
+        } else {
+            boolean converged = false;
+            while (!converged) {
+                converged = true;
+                qit = new QuadIterator(cfg, false);
+                while (qit.hasPrevious()) {
+                    Quad curQuad = qit.previous();
+                    Flow.DataflowObject newOut = analysis.newTempVar();
+                    newOut.setToTop();
+                    for (Quad succQuad: qit.successors1()) {
+                        if (succQuad == null) {
+                            newOut.meetWith(analysis.getExit());
+                        } else {
+                            newOut.meetWith(analysis.getIn(succQuad));
+                        }
+                    }
+                    analysis.setOut(curQuad, newOut);
+                    Flow.DataflowObject oldIn = analysis.getIn(curQuad);
+                    analysis.processQuad(curQuad);
+                    if (!analysis.getIn(curQuad).equals(oldIn)) {
+                        converged = false;
+                    }
+                }
+            }
+            analysis.setEntry(analysis.getIn(entryQuad));
         }
+
         // this needs to come last.
         analysis.postprocess(cfg);
     }
