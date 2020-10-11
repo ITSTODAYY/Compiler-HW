@@ -24,8 +24,8 @@ public class Faintness implements Flow.Analysis {
          * See Flow.java for the meaning of these methods.
          * These need to be filled in.
          */
-        public static Set<String> uniSet;
-        public Set<string> set;
+        static Set<String> uniSet;
+        public Set<String> set;
         public FaintStructure(){
             this.set = new TreeSet<String>();
         }
@@ -97,7 +97,7 @@ public class Faintness implements Flow.Analysis {
                 if (!(sourceOp instanceof Operand.RegisterOperand))
                     continue;
                 String sourceName = ((Operand.RegisterOperand)sourceOp).getRegister().toString();
-                if (souceName.equals(destName))
+                if (sourceName.equals(destName))
                     continue;
                 if (!val.isFaint(destName))
                     val.remove(sourceName);
@@ -167,7 +167,7 @@ public class Faintness implements Flow.Analysis {
         int numz = cfg.getMethod().getParamTypes().length;
         TreeSet<String> uni = new TreeSet<String>();
         for (int j = 0; j < numz; j ++ )
-            uni.add("R" + (string)i ); 
+            uni.add("R" + i ); 
         qit = new QuadIterator(cfg);
         while (qit.hasNext()) {
             Quad q = qit.next();
@@ -180,20 +180,20 @@ public class Faintness implements Flow.Analysis {
 
 
         // allocate the in and out arrays.
-        in = new MyDataflowObject[max];
-        out = new MyDataflowObject[max];
+        in = new FaintStructure[max];
+        out = new FaintStructure[max];
 
         // initialize the contents of in and out.
         qit = new QuadIterator(cfg);
         while (qit.hasNext()) {
             int id = qit.next().getID();
-            in[id] = new MyDataflowObject();
-            out[id] = new MyDataflowObject();
+            in[id] = new FaintStructure();
+            out[id] = new FaintStructure();
         }
 
         // initialize the entry and exit points.
-        entry = new MyDataflowObject();
-        exit = new MyDataflowObject();
+        entry = new FaintStructure();
+        exit = new FaintStructure();
 
         /************************************************
          * Your remaining initialization code goes here *

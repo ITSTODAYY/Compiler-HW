@@ -42,9 +42,9 @@ public class MySolver implements Flow.Solver {
         // analyse the map
         while (quadIter.hasNext()) {
             quadIter.next();
-            addQE = quadIter.successors1().contains(null);
-            reIQ = quadIter.predecessors1().contains(null);
-            cq = quadIter.getCurrentQuad();
+            boolean addQE = quadIter.successors1().contains(null);
+            boolean reIQ = quadIter.predecessors1().contains(null);
+            Quad cq = quadIter.getCurrentQuad();
             if (reIQ)
                 entryQ = cq;
             if (addQE)
@@ -79,7 +79,7 @@ public class MySolver implements Flow.Solver {
                     analysis.processQuad(cq);
 
                     //check converage
-                    if (analysis.getIn(cq).equals(oldIn)){
+                    if (analysis.getIn(cq).equals(ipt)){
                         continue;
                     }
                     isConverge = false;     
@@ -104,7 +104,7 @@ public class MySolver implements Flow.Solver {
                     analysis.setIn(cq, ipt);
                     Flow.DataflowObject opt = analysis.getOut(cq);
                     analysis.processQuad(cq);
-                    if (analysis.getOut(cq).equals(oldIn)){
+                    if (analysis.getOut(cq).equals(opt)){
                         continue;
                     }
                     isConverge = false;

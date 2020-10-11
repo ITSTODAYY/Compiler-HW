@@ -25,7 +25,7 @@ public class ReachingDefs implements Flow.Analysis {
         public boolean equals(Object o) {
             if (o instanceof PairDef) {
                 PairDef p = (PairDef)o;
-                if(this.register.equals(p.register) && this.postion == p.position)
+                if(this.registed.equals(p.registed) && this.postion == p.position)
                     return true;
                 else
                     return false;
@@ -44,7 +44,7 @@ public class ReachingDefs implements Flow.Analysis {
         }
         @Override
         public int hashCode() {
-            int rst = this.register.hashCode() + new Integer(this.position).hashCode();
+            int rst = this.registed.hashCode() + new Integer(this.position).hashCode();
             return rst;
         }
     }
