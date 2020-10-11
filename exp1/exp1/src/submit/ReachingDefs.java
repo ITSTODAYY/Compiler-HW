@@ -25,7 +25,7 @@ public class ReachingDefs implements Flow.Analysis {
         public boolean equals(Object o) {
             if (o instanceof PairDef) {
                 PairDef p = (PairDef)o;
-                if(this.registed.equals(p.registed) && this.postion == p.position)
+                if(this.registed.equals(p.registed) && this.position == p.position)
                     return true;
                 else
                     return false;
@@ -208,7 +208,7 @@ public class ReachingDefs implements Flow.Analysis {
             temp.kill(define.getRegister().toString());
         for (Operand.RegisterOperand define: q.getDefinedRegisters())
             temp.gen(new PairDef(define.getRegister().toString(), q.getID()));
-        out[q.getID()].copy(val);
+        out[q.getID()].copy(temp);
     }
 
     public void setIn(Quad q, Flow.DataflowObject value) {

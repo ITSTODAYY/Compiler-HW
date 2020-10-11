@@ -74,7 +74,7 @@ public class MySolver implements Flow.Solver {
                         opt.meetWith(analysis.getIn(sq));
                     }
 
-                    analysis.serOut(cq, opt);
+                    analysis.setOut(cq, opt);
                     Flow.DataflowObject ipt = analysis.getIn(cq);
                     analysis.processQuad(cq);
 

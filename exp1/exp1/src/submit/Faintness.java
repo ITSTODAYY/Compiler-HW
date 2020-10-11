@@ -18,13 +18,13 @@ public class Faintness implements Flow.Analysis {
      * Class for the dataflow objects in the Faintness analysis.
      * You are free to change this class or move it to another file.
      */
-    public class FaintStructure implements Flow.DataflowObject {
+    public static class FaintStructure implements Flow.DataflowObject {
         /**
          * Methods from the Flow.DataflowObject interface.
          * See Flow.java for the meaning of these methods.
          * These need to be filled in.
          */
-        static Set<String> uniSet;
+        public static Set<String> uniSet;
         public Set<String> set;
         public FaintStructure(){
             this.set = new TreeSet<String>();
@@ -167,7 +167,7 @@ public class Faintness implements Flow.Analysis {
         int numz = cfg.getMethod().getParamTypes().length;
         TreeSet<String> uni = new TreeSet<String>();
         for (int j = 0; j < numz; j ++ )
-            uni.add("R" + i ); 
+            uni.add("R" + j ); 
         qit = new QuadIterator(cfg);
         while (qit.hasNext()) {
             Quad q = qit.next();
