@@ -98,7 +98,7 @@ public class ReachingDefs implements Flow.Analysis {
             if (o instanceof DefineSet) {
                 DefineSet s = (DefineSet)o;
                 if (this.set.equals(s.set))
-                    return true
+                    return true;
             }
             return false;
         }

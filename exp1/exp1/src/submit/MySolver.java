@@ -48,13 +48,13 @@ public class MySolver implements Flow.Solver {
             if (reIQ)
                 entryQ = cq;
             if (addQE)
-                exitQ.add(cq)
+                exitQ.add(cq);
         }
 
         if (exitQ.isEmpty())
-            return
+            return;
         if (entryQ == null)
-            return
+            return;
 
         boolean isConverge = false;
 

@@ -68,7 +68,7 @@ public class Faintness implements Flow.Analysis {
         @Override
         public boolean equals(Object o){
             if (!(o instanceof FaintStructure)){
-                return false
+                return false;
             }
             FaintStructure s = (FaintStructure) o;
             return this.set.equals(s.set);
