@@ -3,6 +3,8 @@ package submit;
 // some useful things to import. add any additional imports you need.
 import joeq.Compiler.Quad.*;
 import flow.Flow;
+import java.util.ArrayList;
+
 
 /**
  * Skeleton class for implementing the Flow.Solver interface.
@@ -61,10 +63,10 @@ public class MySolver implements Flow.Solver {
             for (;!isConverge; isConverge = true){
                 quadIter = new QuadIterator(cfg, false);
                 while (quadIter.hasPrevious()){
-                    var opt = analysis.newTempVar();
+                    Flow.DataflowObject opt = analysis.newTempVar();
                     opt.setToTop();
-                    var cq = quadIter.previous();
-                    for(var sq: quadIter.successors1()){
+                    Quad cq = quadIter.previous();
+                    for(Quad sq: quadIter.successors1()){
                         if (sq == null){
                             opt.meetWith(analysis.getExit());
                             continue;
@@ -73,7 +75,7 @@ public class MySolver implements Flow.Solver {
                     }
 
                     analysis.serOut(cq, opt);
-                    var ipt = analysis.getIn(cq);
+                    Flow.DataflowObject ipt = analysis.getIn(cq);
                     analysis.processQuad(cq);
 
                     //check converage
@@ -90,9 +92,9 @@ public class MySolver implements Flow.Solver {
             for (;!isConverge; isConverge = true){
                 quadIter = new QuadIterator(cfg, true);
                 while (quadIter.hasNext()){
-                    var ipt = analysis.newTempVar();
-                    var cq = quadIter.next();
-                    for (var pq: quadIter.predecessors1()){
+                    Flow.DataflowObject ipt = analysis.newTempVar();
+                    Quad cq = quadIter.next();
+                    for (Quad pq: quadIter.predecessors1()){
                         if (pq == null){
                             ipt.meetWith(analysis.getEntry());
                             continue;
@@ -100,7 +102,7 @@ public class MySolver implements Flow.Solver {
                         ipt.meetWith(analysis.getOut(pq));
                     }
                     analysis.setIn(cq, ipt);
-                    var opt = analysis.getOut(cq);
+                    Flow.DataflowObject opt = analysis.getOut(cq);
                     analysis.processQuad(cq);
                     if (analysis.getOut(cq).equals(oldIn)){
                         continue;
@@ -108,9 +110,9 @@ public class MySolver implements Flow.Solver {
                     isConverge = false;
                 }
             }
-            var exitVal = analysis.newTempVar();
+            Flow.DataflowObject exitVal = analysis.newTempVar();
             exitVal.setToTop();
-            for(var q: exitQ)
+            for(Quad q: exitQ)
                 exitVal.meetWith(analysis.getOut(q));
             analysis.setExit(exitVal);
         }
