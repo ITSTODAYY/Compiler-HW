@@ -15,8 +15,8 @@ class TestFaintness {
     }
 
     /**
-     * 这个例子中由于z作为返回值，x和y在被使用之前都不是faint的
-     * 但在三地址码中，y的计算式中的x被作为常量优化掉了，所以x始终都是faint的
+     * 
+     * 
      */
     int test2() {
         int x = 2;
@@ -26,7 +26,7 @@ class TestFaintness {
     }
 
     /**
-     * 这个例子中x和m都是faint的，z和y不是faint的
+     * x,m faint; z,y not faint
      */
     void test3() throws IOException {
         int x = 2;
@@ -41,8 +41,8 @@ class TestFaintness {
     }
 
     /**
-     * 这个例子中x和z都不是faint的
-     * 但是z += x语句中的x在编译时被优化了，所以输出的分析结果中x还是faint的
+     * x and z is not faint variant
+     * in z += x,x was ignored thus x is faint variant
      */
     void test4() {
         int x = 2;

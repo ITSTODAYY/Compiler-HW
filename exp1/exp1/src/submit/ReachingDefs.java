@@ -14,37 +14,38 @@ import java.util.TreeSet;
  */
 public class ReachingDefs implements Flow.Analysis {
 
-    public static class DefPair implements Comparable {
-        String reg;
-        int pos;
-        DefPair(String reg, int pos) {
-            this.reg = reg;
-            this.pos = pos;
+    public static class PairDef implements Comparable {
+        public int position;
+        public String registed;
+        PairDef(String registed, int position) {
+            this.registed = registed;
+            this.position = position;
         }
-
         @Override
         public boolean equals(Object o) {
-            if (o instanceof DefPair) {
-                DefPair p = (DefPair)o;
-                return reg.equals(p.reg) && pos == p.pos;
+            if (o instanceof PairDef) {
+                PairDef p = (PairDef)o;
+                if(this.registed.equals(p.registed) && this.position == p.position)
+                    return true;
+                else
+                    return false;
             }
-            return false;
+            else
+                return false;
         }
-
+        public int compareTo(Object o) {
+            PairDef p = (PairDef)o;
+            if (this.position < p.position)
+                return -1;
+            else if (this.position == p.position)
+                return 0;
+            else
+                return 1;
+        }
         @Override
         public int hashCode() {
-            return reg.hashCode() + new Integer(pos).hashCode();
-        }
-
-        public int compareTo(Object o) {
-            DefPair p = (DefPair)o;
-            if (pos > p.pos) {
-                return 1;
-            } else if (pos < p.pos) {
-                return -1;
-            } else {
-                return 0;
-            }
+            int rst = this.registed.hashCode() + new Integer(this.position).hashCode();
+            return rst;
         }
     }
 
@@ -52,84 +53,74 @@ public class ReachingDefs implements Flow.Analysis {
      * Class for the dataflow objects in the ReachingDefs analysis.
      * You are free to change this class or move it to another file.
      */
-    public static class DefSet implements Flow.DataflowObject {
-        private Set<DefPair> set;
-        public static Set<DefPair> universalSet;
-        public DefSet() {
-            set = new TreeSet<DefPair>();
-        }
-        public void setToTop() {
-            set = new TreeSet<DefPair>();
-        }
-        public void setToBottom() {
-            set = new TreeSet<DefPair>(universalSet);
-        }
-        public void meetWith (Flow.DataflowObject o) {
-            DefSet a = (DefSet)o;
-            set.addAll(a.set);
-        }
-        public void copy (Flow.DataflowObject o) {
-            DefSet a = (DefSet)o;
-            set = new TreeSet<DefPair>(a.set);
+    public static class DefineSet implements Flow.DataflowObject {
+        public static Set<PairDef> uniSet;
+        public Set<PairDef> set;
+
+        // initialize
+        public DefineSet() {
+            this.set = new TreeSet<PairDef>();
         }
 
-        public void kill(String reg) {
-            for (Iterator<DefPair> it = set.iterator(); it.hasNext();) {
-                DefPair def = it.next();
-                if (def.reg.equals(reg)) {
-                    it.remove();
+        public void copy (Flow.DataflowObject o) {
+            this.set = new TreeSet<PairDef>(((DefineSet)o).set);
+        }
+
+        public void setToTop() {
+            this.set = new TreeSet<PairDef>();
+        }
+
+        public void setToBottom() {
+            this.set = new TreeSet<PairDef>(uniSet);
+        }
+
+        public void meetWith (Flow.DataflowObject o) {
+            this.set.addAll(((DefineSet)o).set);
+        }
+        
+        
+        public void gen(PairDef val) {
+            this.set.add(val);
+        }
+
+        public void kill(String registed) {
+            Iterator<PairDef> iter = this.set.iterator();
+            while(iter.hasNext()) {
+                PairDef define = iter.next();
+                if (define.registed.equals(registed)) {
+                    iter.remove();
                 }
             }
         }
 
-        public void gen(DefPair val) {
-            set.add(val);
-        }
-
-        /**
-         * toString() method for the dataflow objects which is used
-         * by postprocess() below.  The format of this method must
-         * be of the form "[ID0, ID1, ID2, ...]", where each ID is
-         * the identifier of a quad defining some register, and the
-         * list of IDs must be sorted.  See src/test/Test.rd.out
-         * for example output of the analysis.  The output format of
-         * your reaching definitions analysis must match this exactly.
-         */
-        @Override
-        public String toString() {
-            StringBuilder result = new StringBuilder("[");
-            Iterator<DefPair> it = set.iterator();
-            if (it.hasNext()) {
-                result.append(it.next().pos);
-            }
-            while (it.hasNext()) {
-                result.append(", ");
-                result.append(it.next().pos);
-            }
-            result.append(']');
-            return result.toString();
-        }
-
         @Override
         public boolean equals(Object o) {
-            if (o instanceof DefSet) {
-                DefSet s = (DefSet)o;
-                return set.equals(s.set);
+            if (o instanceof DefineSet) {
+                DefineSet s = (DefineSet)o;
+                if (this.set.equals(s.set))
+                    return true;
             }
             return false;
         }
+
+        @Override
+        public String toString() {
+            StringBuilder rst = new StringBuilder("[");
+            Iterator<PairDef> iter = this.set.iterator();
+            if (iter.hasNext()) 
+                rst.append(iter.next().position);
+
+            while (iter.hasNext()) {
+                rst.append(", ");
+                rst.append(iter.next().position);
+            }
+            rst.append(']');
+            return rst.toString();
+        }
     }
 
-    /**
-     * Dataflow objects for the interior and entry/exit points
-     * of the CFG. in[ID] and out[ID] store the entry and exit
-     * state for the input and output of the quad with identifier ID.
-     *
-     * You are free to modify these fields, just make sure to
-     * preserve the data printed by postprocess(), which relies on these.
-     */
-    private DefSet[] in, out;
-    private DefSet entry, exit;
+    private DefineSet[] in, out;
+    private DefineSet entry, exit;
 
     /**
      * This method initializes the datflow framework.
@@ -151,26 +142,25 @@ public class ReachingDefs implements Flow.Analysis {
         max += 1;
 
         // allocate the in and out arrays.
-        in = new DefSet[max];
-        out = new DefSet[max];
+        in = new DefineSet[max];
+        out = new DefineSet[max];
 
         // initialize the contents of in, out and universal set.
-        DefSet.universalSet = new TreeSet<DefPair>();
+        TreeSet<PairDef> uni= new TreeSet<PairDef>();
         qit = new QuadIterator(cfg);
         while (qit.hasNext()) {
             int id = qit.next().getID();
-            in[id] = new DefSet();
-            out[id] = new DefSet();
+            out[id] = new DefineSet();
+            in[id] = new DefineSet();
             if (!qit.getCurrentQuad().getDefinedRegisters().isEmpty()) {
-                for (Operand.RegisterOperand def: qit.getCurrentQuad().getDefinedRegisters()) {
-                    DefSet.universalSet.add(new DefPair(def.getRegister().toString(), id));
-                }
+                for (Operand.RegisterOperand define: qit.getCurrentQuad().getDefinedRegisters())
+                    uni.add(new PairDef(define.getRegister().toString(), id));
             }
         }
-
+        DefineSet.uniSet = uni;
         // initialize the entry and exit points.
-        entry = new DefSet();
-        exit = new DefSet();
+        entry = new DefineSet();
+        exit = new DefineSet();
     }
 
     /**
@@ -201,50 +191,58 @@ public class ReachingDefs implements Flow.Analysis {
     public boolean isForward () {
         return true;
     }
-    public Flow.DataflowObject getEntry() {
-        Flow.DataflowObject result = newTempVar();
-        result.copy(entry);
-        return result;
-    }
-    public Flow.DataflowObject getExit() {
-        Flow.DataflowObject result = newTempVar();
-        result.copy(exit);
-        return result;
-    }
-    public void setEntry(Flow.DataflowObject value) {
-        entry.copy(value);
-    }
-    public void setExit(Flow.DataflowObject value) {
-        exit.copy(value);
-    }
-    public Flow.DataflowObject getIn(Quad q) {
-        Flow.DataflowObject result = newTempVar();
-        result.copy(in[q.getID()]);
-        return result;
-    }
+
     public Flow.DataflowObject getOut(Quad q) {
         Flow.DataflowObject result = newTempVar();
         result.copy(out[q.getID()]);
         return result;
     }
+    public Flow.DataflowObject newTempVar() {
+        return new DefineSet();
+    }
+    
+    public void processQuad(Quad q) {
+        DefineSet temp = new DefineSet();
+        temp.copy(in[q.getID()]);
+        for (Operand.RegisterOperand define: q.getDefinedRegisters())
+            temp.kill(define.getRegister().toString());
+        for (Operand.RegisterOperand define: q.getDefinedRegisters())
+            temp.gen(new PairDef(define.getRegister().toString(), q.getID()));
+        out[q.getID()].copy(temp);
+    }
+
     public void setIn(Quad q, Flow.DataflowObject value) {
         in[q.getID()].copy(value);
     }
+
+    public Flow.DataflowObject getExit() {
+        Flow.DataflowObject result = newTempVar();
+        result.copy(exit);
+        return result;
+    }
+
+    public void setEntry(Flow.DataflowObject value) {
+        entry.copy(value);
+    }
+
+    public void setExit(Flow.DataflowObject value) {
+        exit.copy(value);
+    }
+
     public void setOut(Quad q, Flow.DataflowObject value) {
         out[q.getID()].copy(value);
     }
-    public Flow.DataflowObject newTempVar() {
-        return new DefSet();
+
+    public Flow.DataflowObject getEntry() {
+        Flow.DataflowObject result = newTempVar();
+        result.copy(entry);
+        return result;
     }
-    public void processQuad(Quad q) {
-        DefSet val = new DefSet();
-        val.copy(in[q.getID()]);
-        for (Operand.RegisterOperand def: q.getDefinedRegisters()) {
-            val.kill(def.getRegister().toString());
-        }
-        for (Operand.RegisterOperand def: q.getDefinedRegisters()) {
-            val.gen(new DefPair(def.getRegister().toString(), q.getID()));
-        }
-        out[q.getID()].copy(val);
+
+    public Flow.DataflowObject getIn(Quad q) {
+        Flow.DataflowObject result = newTempVar();
+        result.copy(in[q.getID()]);
+        return result;
     }
 }
+
